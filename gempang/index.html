@@ -70,7 +70,7 @@ canvas#cv{touch-action:none;border-radius:18px;background:rgba(0,0,0,.28);box-sh
 <div id="app">
   <section id="menu" class="screen on">
     <h1>💎 보석팡팡</h1>
-    <div class="sub" id="menuSub">같은 보석 3개를 맞춰 목표를 달성하세요</div>
+    <div class="sub" id="menuSub">같은 보석 3개를 맞춰 목표를 달성하세요 · v3</div>
     <div class="row">
       <button class="btn" id="btnContinue">이어하기</button>
       <button class="btn alt" id="btnSoundM">🔊</button>
@@ -777,7 +777,7 @@ cv.addEventListener('pointerdown', e => {
 cv.addEventListener('pointermove', e => {
   if (!down || busy) return;
   const dx = e.clientX - down.x, dy = e.clientY - down.y;
-  if (Math.max(Math.abs(dx), Math.abs(dy)) < cell * .35) return;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < cell * (down.special ? .6 : .35)) return;  // 특수 보석은 손가락이 조금 흔들려도 탭으로 처리
   const p = down.p; down = null; sel = null;
   if (Math.abs(dx) > Math.abs(dy)) trySwap(p.r, p.c, p.r, p.c + (dx > 0 ? 1 : -1));
   else trySwap(p.r, p.c, p.r + (dy > 0 ? 1 : -1), p.c);
