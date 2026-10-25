@@ -70,7 +70,7 @@ canvas#cv{touch-action:none;border-radius:18px;background:rgba(0,0,0,.28);box-sh
 <div id="app">
   <section id="menu" class="screen on">
     <h1>💎 보석팡팡</h1>
-    <div class="sub" id="menuSub">같은 보석 3개를 맞춰 목표를 달성하세요 · v3</div>
+    <div class="sub" id="menuSub">같은 보석 3개를 맞춰 목표를 달성하세요 · v4</div>
     <div class="row">
       <button class="btn" id="btnContinue">이어하기</button>
       <button class="btn alt" id="btnSoundM">🔊</button>
@@ -434,6 +434,15 @@ async function trySwap(r1, c1, r2, c2) {
     handled = true; G.moves--; updateHud();
     const cs = comboSet(a, b, r2, c2, r1, c1);
     await doClear(cs.set, { long: true });
+    fall(); await settle();
+    await resolve([]);
+  } else if (a.sp || b.sp) {
+    // 특수 보석을 옆으로 옮기면 옮긴 자리에서 바로 발동
+    handled = true; G.moves--; updateHud();
+    const set = new Set();
+    if (a.sp) set.add(keyOf(r2, c2));
+    if (b.sp) set.add(keyOf(r1, c1));
+    await doClear(set, { long: true });
     fall(); await settle();
     await resolve([]);
   } else {
