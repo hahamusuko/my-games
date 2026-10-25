@@ -450,6 +450,16 @@ async function trySwap(r1, c1, r2, c2) {
   }
   await afterMove();
 }
+async function activateSpecial(r, c) {
+  const t = at(r, c);
+  if (busy || !G || G.over || !t || t.k !== 'g' || !t.sp || t.dead) return;
+  busy = true; clearHint(); sel = null;
+  G.moves--; updateHud();
+  await doClear(new Set([keyOf(r, c)]), { long: true });
+  fall(); await settle();
+  await resolve([]);
+  await afterMove();
+}
 async function afterMove() {
   if (goalsDone()) { G.over = true; await sleep(350); showWin(); busy = false; return; }
   if (G.moves <= 0) { G.over = true; await sleep(250); showLose(); busy = false; return; }
@@ -460,6 +470,7 @@ const goalsDone = () => G.goals.every(g => g.have >= g.need);
 
 /* ===== 가능한 움직임 찾기 / 섞기 ===== */
 function findMove() {
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) { const t = grid[r][c]; if (t && t.k === 'g' && t.sp && !t.dead) return [[r, c], [r, c]]; }  // 특수 보석은 탭으로 발동 가능
   for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
     const a = grid[r][c]; if (!a || a.k === 'b' || a.dead) continue;
     for (const [dr, dc] of [[0, 1], [1, 0]]) {
@@ -760,6 +771,7 @@ cv.addEventListener('pointerdown', e => {
   const t = at(p.r, p.c); if (!t || t.k === 'b') { sel = null; return; }
   try { cv.setPointerCapture(e.pointerId); } catch (x) {}
   if (sel && Math.abs(sel.r - p.r) + Math.abs(sel.c - p.c) === 1) { const s = sel; sel = null; trySwap(s.r, s.c, p.r, p.c); down = null; return; }
+  if (t.sp) { sel = null; down = { x: e.clientX, y: e.clientY, p, special: true }; return; }  // 특수 보석은 탭만 해도 발동
   sel = p; down = { x: e.clientX, y: e.clientY, p };
 });
 cv.addEventListener('pointermove', e => {
@@ -770,7 +782,10 @@ cv.addEventListener('pointermove', e => {
   if (Math.abs(dx) > Math.abs(dy)) trySwap(p.r, p.c, p.r, p.c + (dx > 0 ? 1 : -1));
   else trySwap(p.r, p.c, p.r + (dy > 0 ? 1 : -1), p.c);
 });
-cv.addEventListener('pointerup', () => { down = null; });
+cv.addEventListener('pointerup', () => {
+  const d = down; down = null;
+  if (d && d.special && !busy && G && !G.over) activateSpecial(d.p.r, d.p.c);
+});
 cv.addEventListener('pointercancel', () => { down = null; });
 document.addEventListener('gesturestart', e => e.preventDefault());
 document.addEventListener('dblclick', e => e.preventDefault());
