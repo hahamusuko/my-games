@@ -1,0 +1,14 @@
+{
+  "name": "보석팡팡",
+  "short_name": "보석팡팡",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#12082e",
+  "theme_color": "#2a1b5e",
+  "icons": [
+    {"src": "icon-180.png", "sizes": "180x180", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
