@@ -43,12 +43,25 @@ button{font:inherit;color:inherit;border:0;cursor:pointer}
 .chip{background:var(--card);border-radius:999px;padding:9px 16px;font-weight:700;font-size:15px;box-shadow:0 3px 0 rgba(160,110,90,.2)}
 .chip.on{background:#ffd0de;color:#c93a66}
 
+/* 단계 선택 */
+#stages{align-items:stretch}
+#stages .head{display:flex;align-items:center;gap:10px;margin-bottom:clamp(8px,2vh,16px)}
+#stages .head .t{flex:1;text-align:center;line-height:1.15}
+#stages .head .t b{display:block;font-size:clamp(26px,4.8vh,36px);font-weight:900;color:#ff5c8a;text-shadow:0 2px 0 #fff}
+#stages .head .t span{font-size:clamp(12px,2vh,15px);color:var(--sub);font-weight:700}
+#stages .head .sp{width:clamp(46px,8.2vh,60px)}
+#sgrid{flex:1;min-height:0;overflow-y:auto;touch-action:pan-y;display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(8px,1.6vh,12px);align-content:start;padding:2px 2px 10px}
+.sv{aspect-ratio:1;border-radius:18px;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:clamp(20px,3.6vh,26px);box-shadow:0 4px 0 rgba(160,110,90,.22);line-height:1.1}
+.sv small{font-size:clamp(11px,1.8vh,13px);color:#f0a000;letter-spacing:-1px;height:1.2em}
+.sv.cur{background:linear-gradient(#ffd0de,#ffa6c0);color:#fff;text-shadow:0 2px 0 #d94b79}
+.sv.lock{opacity:.4}
+
 /* 게임 */
 #game.on{display:grid;grid-template-rows:auto minmax(0,1fr) auto;row-gap:clamp(6px,1.4vh,12px)}
 #top{display:flex;align-items:center;gap:10px}
 #top .t{flex:1;text-align:center;line-height:1.15}
-#top .t b{display:block;font-size:clamp(26px,4.8vh,36px);font-weight:900;color:#ff5c8a;text-shadow:0 2px 0 #fff}
-#top .t span{font-size:clamp(12px,2vh,15px);color:var(--sub);font-weight:700}
+#top .t b{display:block;font-size:clamp(20px,3.8vh,30px);font-weight:900;color:#ff5c8a;text-shadow:0 2px 0 #fff;white-space:nowrap}
+#top .t span{font-size:clamp(11px,1.9vh,14px);color:var(--sub);font-weight:700;white-space:nowrap}
 #top .box{min-width:clamp(64px,12vh,84px);text-align:center;background:var(--card);border-radius:16px;padding:6px 10px;line-height:1.15;box-shadow:0 3px 0 rgba(160,110,90,.22)}
 #top .box small{display:block;font-size:11px;color:var(--sub);font-weight:700}
 #top .box b{font-size:clamp(18px,3.2vh,24px)}
@@ -79,6 +92,15 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
       <button class="chip" id="optDim">막힌 패 어둡게</button>
       <button class="chip" id="optSound">🔊 소리</button>
     </div>
+  </section>
+
+  <section id="stages" class="screen">
+    <div class="head">
+      <button class="icon" id="btnBack" aria-label="뒤로">←</button>
+      <div class="t"><b id="stageTitle">쉬움</b><span id="stageSub"></span></div>
+      <div class="sp"></div>
+    </div>
+    <div id="sgrid"></div>
   </section>
 
   <section id="game" class="screen">
@@ -117,17 +139,42 @@ const DIFFS = {
   normal: { name: '보통',   emoji: '🍇', kinds: 14 },
   hard:   { name: '어려움', emoji: '🍩', kinds: 18 },
 };
-/* 층별 배치: (z, 시작 x, 시작 y, 가로 개수, 세로 개수) — 단위는 패 크기 */
-const LAYOUTS = {
-  easy:   [[0, 0, 0, 5, 6], [1, 1, 1, 3, 4], [2, 1.5, 2, 2, 2]],
-  normal: [[0, 0, 0, 6, 7], [1, 1, 1, 4, 5], [2, 2, 2, 2, 3]],
-  hard:   [[0, 0, 0, 6, 7], [1, .5, .5, 5, 6], [2, 1, 1.5, 4, 4], [3, 2, 2.5, 2, 2]],
+/* 난이도별 단계 설정: 판 크기, 층 수, 그림 종류 수(앞 단계는 적고 뒤로 갈수록 많아짐), 별 기준(짝당 초) */
+const STAGE_COUNT = 20;
+const STAGE_CFG = {
+  easy:   { dims: i => (i < 7 ? [5, 5] : [5, 6]), min: 26, kinds: [6, 10],  layers: i => (i < 10 ? 2 : 3), perPair: 5 },
+  normal: { dims: i => (i < 7 ? [5, 6] : i < 14 ? [6, 6] : [6, 7]), min: 40, kinds: [10, 14], layers: i => (i < 7 ? 2 : i < 14 ? 3 : 4), perPair: 4 },
+  hard:   { dims: i => (i < 7 ? [6, 6] : i < 14 ? [7, 6] : [7, 7]), min: 60, kinds: [14, 18], layers: i => (i < 7 ? 3 : 4), perPair: 3.5 },
+};
+/* 바닥 층의 모양 (c,r = 칸 위치, W,H = 판 크기) */
+const cxy = (c, r, W, H) => [c - (W - 1) / 2, r - (H - 1) / 2];
+const SHAPES = [
+  ['사각', () => true],
+  ['다이아', (c, r, W, H) => { const [x, y] = cxy(c, r, W, H); return Math.abs(x) / (W / 2) + Math.abs(y) / (H / 2) <= 1.05; }],
+  ['동그라미', (c, r, W, H) => { const [x, y] = cxy(c, r, W, H); return (x / (W / 2)) ** 2 + (y / (H / 2)) ** 2 <= 1.08; }],
+  ['십자', (c, r, W, H) => { const [x, y] = cxy(c, r, W, H); return Math.abs(x) <= 1 || Math.abs(y) <= 1; }],
+  ['하트', (c, r, W, H) => { const [x, y] = cxy(c, r, W, H); const X = x / (W / 2) * 1.25, Y = -y / (H / 2) * 1.25 + .15; return (X * X + Y * Y - 1) ** 3 - X * X * Y ** 3 <= 0; }],
+  ['모래시계', (c, r, W, H) => { const [x, y] = cxy(c, r, W, H); return Math.abs(x) <= Math.abs(y) / (H / 2) * (W / 2) + .6; }],
+  ['쌍둥이 탑', (c, r, W, H) => c !== Math.floor(W / 2) && !(r === 0 && (c === 1 || c === W - 2))],
+  ['나비', (c, r, W, H) => { const [x, y] = cxy(c, r, W, H); return Math.abs(y) <= Math.abs(x) / (W / 2) * (H / 2) + .6; }],
+  ['피라미드', (c, r, W, H) => { const [x] = cxy(c, r, W, H); return Math.abs(x) <= (r + .5) / H * (W / 2) + .4; }],
+  ['바둑판', (c, r) => !(c % 2 === 1 && r % 2 === 1)],
+  ['계단', (c, r, W, H) => c <= r * (W / H) + 1],
+  ['H자', (c, r, W, H) => c <= 1 || c >= W - 2 || r === Math.floor(H / 2)],
+];
+const STAGE_ORDER = { easy: [0, 1, 2, 8, 3, 9, 4, 11, 5, 6], normal: [0, 3, 1, 9, 4, 2, 8, 7, 10, 5, 6, 11], hard: [4, 7, 1, 10, 2, 11, 3, 5, 9, 6, 8, 0] };
+const stageCfg = (key, stage) => {
+  const c = STAGE_CFG[key], i = stage - 1, ord = STAGE_ORDER[key];
+  const shapeIdx = ord[i % ord.length];
+  const kinds = Math.round(c.kinds[0] + (c.kinds[1] - c.kinds[0]) * i / (STAGE_COUNT - 1));
+  const [W, H] = c.dims(i);
+  return { W, H, kinds, layers: c.layers(i), shapeIdx, perPair: c.perPair, min: c.min };
 };
 const TILE_RATIO = 1.24;   // 패 세로/가로
 
 /* ===== 저장 ===== */
 const SAVE_KEY = 'sichuan.v1';
-let store = { best: {}, sound: true, dim: true };
+let store = { best: {}, prog: {}, sound: true, dim: true };
 try { Object.assign(store, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) {}
 const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(store)); } catch (e) {} };
 
@@ -152,14 +199,53 @@ const sfx = {
 };
 
 /* ===== 판 데이터 ===== */
-let diffKey = 'easy', slots = [], kind = [], alive = [], cover = [], leftN = [], rightN = [];
+let diffKey = 'easy', stageNo = 1, slots = [], kind = [], alive = [], cover = [], leftN = [], rightN = [];
 let sel = -1, history = [], hintPair = null, hintUntil = 0, comboCount = 0;
 let anims = [], particles = [], shakes = new Map();
-let startAt = 0, elapsed = 0, running = false, over = false, shuffling = false;
+let parTime = 0, startAt = 0, elapsed = 0, running = false, over = false, shuffling = false;
 
-function buildSlots(key) {
+/* 바닥 모양 위에 한 칸씩 안쪽으로 줄여가며 층을 쌓는다 */
+const stageCache = {};
+/* 단계마다 다른 모양이 되도록: 최근 4단계에서 쓴 모양은 피하고, 너무 작은 모양은 건너뛴다 */
+function buildSlots(key, stage) {
+  if (!stageCache[key]) {
+    const list = [], recent = [];
+    for (let s = 1; s <= STAGE_COUNT; s++) {
+      const cfg = stageCfg(key, s), need = Math.max(24, Math.round(cfg.W * cfg.H * ({ easy: .85, normal: .95, hard: 1.1 })[key]));
+      let pick = null, fallback = null;
+      for (let k = 0; k < SHAPES.length && !pick; k++) {
+        const idx = (cfg.shapeIdx + k) % SHAPES.length, out = buildShape(cfg, idx);
+        if (out.length < need) continue;
+        if (!fallback) fallback = { idx, out };
+        if (!recent.includes(idx)) pick = { idx, out };
+      }
+      pick = pick || fallback || { idx: 0, out: buildShape(cfg, 0) };
+      recent.push(pick.idx); if (recent.length > 4) recent.shift();
+      list.push(pick);
+    }
+    stageCache[key] = list;
+  }
+  return stageCache[key][stage - 1].out.map(t => ({ ...t }));
+}
+function buildShape(cfg, shapeIdx) {
+  const { W, H } = cfg, fn = SHAPES[shapeIdx][1];
+  let cells = new Set();
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (fn(c, r, W, H)) cells.add(r * W + c);
+  if (cells.size < 12) { cells = new Set(); for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) cells.add(r * W + c); }
+  const layers = [cells];
+  for (let z = 1; z < cfg.layers; z++) {
+    const prev = layers[z - 1], next = new Set();
+    for (const k of prev) {
+      const c = k % W, r = Math.floor(k / W);
+      if (c > 0 && c < W - 1 && r > 0 && r < H - 1 && prev.has(k - 1) && prev.has(k + 1) && prev.has(k - W) && prev.has(k + W)) next.add(k);
+    }
+    if (next.size < 2) { for (const k of prev) if ((k % W + Math.floor(k / W)) % 2 === 0) next.add(k); }
+    if (next.size < 2) break;
+    layers.push(next);
+  }
   const out = [];
-  for (const [z, x0, y0, cols, rows] of LAYOUTS[key]) for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) out.push({ x: (x0 + c) * 2, y: (y0 + r) * 2, z });
+  layers.forEach((set, z) => { for (const k of [...set].sort((a, b) => a - b)) out.push({ x: (k % W) * 2, y: Math.floor(k / W) * 2, z }); });
+  if (out.length % 2) out.pop();    // 짝이 맞도록
   return out;
 }
 function buildNeighbors() {
@@ -199,15 +285,17 @@ function dealInto(idxs, pairKinds) {
   }
   return null;
 }
-function newGame(key) {
-  diffKey = key; slots = buildSlots(key); buildNeighbors();
-  const K = DIFFS[key].kinds, pairs = slots.length / 2, pk = [];
-  for (let i = 0; i < pairs; i++) pk.push(i % K);
+function newGame(key, stage) {
+  diffKey = key; stageNo = stage; const cfg = stageCfg(key, stage);
+  slots = buildSlots(key, stage); buildNeighbors();
+  const pairs = slots.length / 2, pk = [];
+  for (let i = 0; i < pairs; i++) pk.push(i % cfg.kinds);
   const all = slots.map((_, i) => i), res = dealInto(all, pk);
   kind = slots.map((_, i) => res[i]); alive = slots.map(() => true);
   sel = -1; history = []; hintPair = null; anims = []; particles = []; shakes = new Map(); comboCount = 0;
   elapsed = 0; startAt = Date.now(); running = true; over = false; shuffling = false;
-  $('#diffName').textContent = DIFFS[key].name; updateHud(); layout();
+  parTime = pairs * cfg.perPair * 1000;
+  $('#diffName').textContent = DIFFS[key].name + ' ' + stage + '단계'; updateHud(); layout();
 }
 function reshuffle() {
   const idxs = [], kinds = [];
@@ -247,6 +335,12 @@ function removePair(a, b) {
 async function autoShuffle() {
   shuffling = true; toast('움직일 패가 없어서 섞어요 🔀', 1400); await sleep(900);
   reshuffle(); shuffling = false; updateHud();
+  if (!findPairs().length) deadEnd();        // 위아래로 겹친 패만 남는 등 섞어도 못 푸는 경우
+}
+function deadEnd() {
+  running = false; elapsed += Date.now() - startAt;
+  openModal(`<div class="big">😵</div><h2>더 이상 짝이 없어요</h2><p>패가 서로 막혀서 섞어도 풀 수 없어요.<br>한 수 되돌려서 다시 해 보세요.</p>
+    <div class="btns">${history.length ? '<button class="btn" data-a="undo">한 수 되돌리기</button>' : ''}<button class="btn alt" data-a="again">다시 하기</button><button class="btn alt" data-a="stages">단계 선택</button></div>`);
 }
 function undo() {
   if (over || shuffling || !history.length) return;
@@ -258,16 +352,23 @@ function hint() {
   const p = findPairs(); if (!p.length) { autoShuffle(); return; }
   hintPair = p[rndInt(p.length)]; hintUntil = Date.now() + 4000; sel = -1;
 }
+const starsFor = ms => (ms <= parTime ? 3 : ms <= parTime * 1.7 ? 2 : 1);
+const progOf = k => (store.prog[k] = store.prog[k] || {});
+const unlockedStage = k => { const p = progOf(k); let n = 1; while (p[n] && n < STAGE_COUNT) n++; return n; };
 function win() {
   over = true; running = false; elapsed = Date.now() - startAt; sfx.win();
-  const prev = store.best[diffKey], isBest = !prev || elapsed < prev;
-  if (isBest) { store.best[diffKey] = elapsed; save(); }
-  setTimeout(() => openModal(`<div class="big">🎉</div><h2>모두 맞췄어요!</h2><p>걸린 시간 ${fmt(elapsed)}${isBest ? '<br>✨ 새 기록이에요!' : '<br>최고 기록 ' + fmt(store.best[diffKey])}</p>
-    <div class="btns"><button class="btn" data-a="again">한 번 더</button><button class="btn alt" data-a="menu">메뉴</button></div>`), 700);
+  const stars = starsFor(elapsed), p = progOf(diffKey), prev = p[stageNo];
+  const isBest = !prev || elapsed < prev.t;
+  p[stageNo] = { s: Math.max(stars, prev ? prev.s : 0), t: isBest ? elapsed : prev.t }; save();
+  const hasNext = stageNo < STAGE_COUNT;
+  setTimeout(() => openModal(`<div class="big">🎉</div><h2>${stageNo}단계 클리어!</h2>
+    <div style="font-size:40px;color:#ffb300;letter-spacing:4px">${[1, 2, 3].map(i => i <= stars ? '★' : '<span style="opacity:.25">★</span>').join('')}</div>
+    <p>걸린 시간 ${fmt(elapsed)}${isBest ? '<br>✨ 새 기록이에요!' : '<br>최고 기록 ' + fmt(p[stageNo].t)}</p>
+    <div class="btns">${hasNext ? '<button class="btn" data-a="next">다음 단계</button>' : '<p>🏆 모든 단계를 클리어했어요!</p>'}<button class="btn alt" data-a="again">다시 하기</button><button class="btn alt" data-a="stages">단계 선택</button></div>`), 700);
 }
 const fmt = ms => { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 function updateHud() {
-  $('#pairs').textContent = '남은 짝 ' + Math.floor(remainingTiles() / 2);
+  $('#pairs').textContent = '남은 짝 ' + Math.floor(remainingTiles() / 2) + ' · ★3 ' + fmt(parTime) + ' 이내';
   $('#btnUndo').disabled = !history.length;
 }
 let toastTimer = 0;
@@ -275,33 +376,50 @@ function toast(t, ms = 1100) { $('#toastText').textContent = t; $('#toast').clas
 function openModal(html) { $('#modalBox').innerHTML = html; $('#modal').classList.add('on'); }
 $('#modalBox').addEventListener('click', e => {
   const a = e.target.closest('[data-a]'); if (!a) return; $('#modal').classList.remove('on');
-  if (a.dataset.a === 'again') newGame(diffKey); else goMenu();
+  const act = a.dataset.a;
+  if (act === 'undo') { undo(); startAt = Date.now(); running = true; }
+  else if (act === 'again') newGame(diffKey, stageNo); else if (act === 'next') newGame(diffKey, stageNo + 1); else goStages(diffKey);
 });
 
 /* ===== 화면 ===== */
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); }
 function goMenu() { running = false; renderMenu(); showScreen('menu'); }
+function goStages(k) { running = false; diffKey = k; renderStages(k); showScreen('stages'); }
 function renderMenu() {
   const box = $('#cards'); box.innerHTML = '';
   for (const [k, d] of Object.entries(DIFFS)) {
-    const n = LAYOUTS[k].reduce((s, l) => s + l[3] * l[4], 0);
+    const p = progOf(k), done = Object.keys(p).length, stars = Object.values(p).reduce((s, v) => s + v.s, 0);
     const b = document.createElement('button'); b.className = 'card';
-    b.innerHTML = `<div class="e">${d.emoji}</div><div><b>${d.name}</b><span>패 ${n}개 · 그림 ${d.kinds}종</span></div><div class="best">${store.best[k] ? '🏆 ' + fmt(store.best[k]) : ''}</div>`;
-    b.onclick = () => { showScreen('game'); newGame(k); };
+    b.innerHTML = `<div class="e">${d.emoji}</div><div><b>${d.name}</b><span>${STAGE_COUNT}단계 · 그림 ${STAGE_CFG[k].kinds[0]}~${STAGE_CFG[k].kinds[1]}종</span></div><div class="best">${done ? done + '/' + STAGE_COUNT + '<br>★ ' + stars : ''}</div>`;
+    b.onclick = () => goStages(k);
     box.appendChild(b);
   }
   $('#optDim').classList.toggle('on', store.dim);
   $('#optSound').classList.toggle('on', store.sound); $('#optSound').textContent = (store.sound ? '🔊' : '🔇') + ' 소리';
   $('#btnSound').textContent = store.sound ? '🔊' : '🔇';
 }
+function renderStages(k) {
+  $('#stageTitle').textContent = DIFFS[k].name; const p = progOf(k), un = unlockedStage(k);
+  $('#stageSub').textContent = Object.keys(p).length + '/' + STAGE_COUNT + ' 클리어';
+  const g = $('#sgrid'); g.innerHTML = '';
+  for (let i = 1; i <= STAGE_COUNT; i++) {
+    const b = document.createElement('button'), r = p[i];
+    b.className = 'sv' + (i === un ? ' cur' : '') + (i > un ? ' lock' : '');
+    b.innerHTML = (i > un ? '🔒' : i) + `<small>${r ? '★'.repeat(r.s) : ''}</small>`;
+    if (i <= un) b.onclick = () => { showScreen('game'); newGame(k, i); };
+    g.appendChild(b);
+  }
+  const cur = g.querySelector('.cur'); if (cur) setTimeout(() => { g.scrollTop = cur.offsetTop - g.clientHeight / 2 + cur.clientHeight / 2; }, 0);
+}
 $('#optDim').onclick = () => { store.dim = !store.dim; save(); renderMenu(); };
 const toggleSound = () => { store.sound = !store.sound; save(); renderMenu(); };
 $('#optSound').onclick = $('#btnSound').onclick = toggleSound;
-$('#btnExit').onclick = goMenu;
+$('#btnExit').onclick = () => goStages(diffKey);
+$('#btnBack').onclick = goMenu;
 $('#btnHint').onclick = hint;
 $('#btnUndo').onclick = undo;
 $('#btnShuffle').onclick = () => { if (!over && !shuffling) { reshuffle(); toast('섞었어요 🔀'); } };
-$('#btnRetry').onclick = () => newGame(diffKey);
+$('#btnRetry').onclick = () => newGame(diffKey, stageNo);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && running) { elapsed += Date.now() - startAt; running = 'paused'; }
   else if (!document.hidden && running === 'paused') { startAt = Date.now(); running = true; }
