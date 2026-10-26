@@ -17,14 +17,14 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 html,body{margin:0;height:100%;background:var(--bg2);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;overscroll-behavior:none}
 body{position:fixed;inset:0;background:linear-gradient(#192062,#2d3698 70%,#3a3fb0);overflow:hidden}
-#app{height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;padding:calc(max(10px,env(safe-area-inset-top)) + 26px) 12px calc(max(12px,env(safe-area-inset-bottom)) + 14px)}
+#app{height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;padding:calc(max(8px,env(safe-area-inset-top)) + clamp(6px,2vh,18px)) 12px calc(max(10px,env(safe-area-inset-bottom)) + clamp(6px,1.6vh,14px))}
 .screen{display:none;flex:1;min-height:0;flex-direction:column}
 .screen.on{display:flex}
 button{font:inherit;color:inherit;border:0;cursor:pointer}
 .btn{background:linear-gradient(#ffd24d,#ff9f1c);color:#3a2300;font-weight:800;padding:13px 22px;border-radius:16px;font-size:17px;box-shadow:0 4px 0 #b86a00,0 8px 16px rgba(0,0,0,.3)}
 .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #b86a00}
 .btn.alt{background:linear-gradient(#8f86c9,#5b4fa8);color:#fff;box-shadow:0 4px 0 #382f78,0 8px 16px rgba(0,0,0,.3)}
-.icon{width:62px;height:62px;border-radius:18px;background:var(--card);font-size:30px;display:grid;place-items:center}
+.icon{width:clamp(46px,8.2vh,62px);height:clamp(46px,8.2vh,62px);border-radius:18px;background:var(--card);font-size:clamp(22px,4vh,30px);display:grid;place-items:center}
 .icon:active{background:rgba(255,255,255,.22)}
 
 /* 메뉴 */
@@ -38,26 +38,28 @@ button{font:inherit;color:inherit;border:0;cursor:pointer}
 .lv.cur small{color:#7a4a00}
 .lv.lock{opacity:.35}
 
-/* 게임 */
-#title{text-align:center;font-size:40px;font-weight:900;color:#ffc92e;text-shadow:0 3px 0 #8a5a00,0 5px 10px rgba(0,0,0,.4);line-height:1.1}
-#best{text-align:center;color:#ffd24d;font-weight:800;font-size:18px;margin:2px 0 10px}
+/* 게임: 칸 높이를 고정 비율(vh)로 잡아서 판이 바뀌어도 배치가 변하지 않는다 */
+#game.on{display:grid;grid-template-rows:auto auto auto auto minmax(0,1fr) auto;row-gap:clamp(4px,1.1vh,10px)}
+#title{text-align:center;font-size:clamp(28px,5.6vh,42px);font-weight:900;color:#ffc92e;text-shadow:0 3px 0 #8a5a00,0 5px 10px rgba(0,0,0,.4);line-height:1.1}
+#best{text-align:center;color:#ffd24d;font-weight:800;font-size:clamp(14px,2.4vh,18px);line-height:1.2}
 #best i{font-style:normal;opacity:.3}#best i.on{opacity:1}
-#panels{display:flex;gap:10px;align-items:stretch}
-.panel{background:linear-gradient(#5a66cc,#2c3794);border:3px solid #ffc92e;border-radius:22px;padding:6px 10px 8px;text-align:center}
+#panels{display:flex;gap:10px;height:clamp(92px,15.5vh,132px)}
+.panel{display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(#5a66cc,#2c3794);border:3px solid #ffc92e;border-radius:22px;padding:4px 8px 6px;text-align:center}
 #movePanel{flex:0 0 36%}
-.pl{font-size:15px;font-weight:800;color:#c9cffa;line-height:1.2}
-.mv{line-height:1}.mv b{font-size:50px;font-weight:900}.mv span{font-size:26px;font-weight:800;color:#c9cffa}
+.pl{font-size:clamp(12px,2vh,15px);font-weight:800;color:#c9cffa;line-height:1.2}
+.mv{flex:1;display:flex;align-items:center;justify-content:center;gap:2px;line-height:1}
+.mv b{font-size:clamp(34px,6.8vh,54px);font-weight:900}.mv span{font-size:clamp(18px,3.2vh,26px);font-weight:800;color:#c9cffa;align-self:flex-end;padding-bottom:.35em}
 #goalPanel{flex:1;min-width:0}
-#goals{display:flex;gap:10px;justify-content:space-around;align-items:flex-end;flex-wrap:wrap}
-.goal{display:flex;flex-direction:column;align-items:center;min-width:46px}
-.goal canvas{width:54px;height:54px}
-.goal span{font-size:24px;font-weight:900;line-height:1;text-shadow:0 2px 0 rgba(0,0,0,.5)}
+#goals{flex:1;min-height:0;display:flex;gap:6px;justify-content:space-around;align-items:center}
+.goal{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.goal canvas{height:clamp(30px,5.4vh,52px);width:auto;aspect-ratio:1;max-width:100%}
+.goal span{font-size:clamp(16px,3vh,24px);font-weight:900;line-height:1.1;text-shadow:0 2px 0 rgba(0,0,0,.5)}
 .goal.done span{color:#7dffa6}
-#starRule{margin:10px 0 4px;text-align:center;font-size:22px;font-weight:800;background:rgba(0,0,0,.18);border-radius:18px;padding:5px 8px}
+#starRule{text-align:center;font-size:clamp(14px,2.7vh,22px);font-weight:800;background:rgba(0,0,0,.18);border-radius:18px;padding:3px 6px;white-space:nowrap;overflow:hidden}
 #starRule b{color:#ffc92e;font-weight:900}
-#stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
-canvas#cv{touch-action:none}
-#bar{display:flex;gap:16px;justify-content:center;margin-top:8px}
+#stage{position:relative;min-height:0;overflow:hidden}
+canvas#cv{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);touch-action:none}
+#bar{display:flex;gap:clamp(10px,2.5vw,16px);justify-content:center}
 #msg{position:absolute;left:0;right:0;top:8%;text-align:center;font-size:30px;font-weight:900;color:var(--gold);text-shadow:0 3px 0 #7a4a00,0 4px 12px rgba(0,0,0,.5);pointer-events:none;opacity:0;transition:opacity .25s}
 #msg.on{opacity:1}
 
@@ -77,7 +79,7 @@ canvas#cv{touch-action:none}
 <div id="app">
   <section id="menu" class="screen on">
     <h1>💎 보석팡팡</h1>
-    <div class="sub" id="menuSub">같은 보석 3개를 맞춰 목표를 달성하세요 · v7</div>
+    <div class="sub" id="menuSub">같은 보석 3개를 맞춰 목표를 달성하세요 · v8</div>
     <div class="row">
       <button class="btn" id="btnContinue">이어하기</button>
       <button class="btn alt" id="btnSoundM">🔊</button>
@@ -650,11 +652,13 @@ const cv = $('#cv'), cx = cv.getContext('2d');
 let cell = 40, dpr = 1;
 function layout() {
   const stage = $('#stage'); const w = stage.clientWidth, h = stage.clientHeight;
-  const S = Math.max(160, Math.min(w - 4, h - 4, 520));
+  if (w < 50 || h < 50) return;     // 화면이 숨겨져 있을 때는 건드리지 않는다
+  const S = Math.min(w, h, 520);
   cell = Math.floor(S / N); dpr = window.devicePixelRatio || 1;
   cv.style.width = cv.style.height = cell * N + 'px';
   cv.width = cv.height = Math.round(cell * N * dpr);
 }
+if (window.ResizeObserver) new ResizeObserver(() => layout()).observe($('#stage'));
 window.addEventListener('resize', () => setTimeout(layout, 60));
 window.addEventListener('orientationchange', () => setTimeout(layout, 200));
 
