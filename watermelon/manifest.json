@@ -1,6 +1,6 @@
 {
-  "name": "수박 합치기",
-  "short_name": "수박합치기",
+  "name": "수박게임",
+  "short_name": "수박게임",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

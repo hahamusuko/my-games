@@ -3,5 +3,5 @@
 
 - 보석팡팡: gempang/index.html
 - 과일 사천성(쌓기): sichuan/index.html
-- 수박 합치기: watermelon/index.html (물리 엔진 matter.js 0.19.0, MIT)
+- 수박게임: watermelon/index.html (물리 엔진 matter.js 0.19.0, MIT)
 
