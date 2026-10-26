@@ -258,7 +258,7 @@ function drawPattern(g, lv, r) {
     g.strokeStyle = 'rgba(200,120,0,.17)'; g.lineWidth = Math.max(1, r * .025);
     for (let k = -4; k <= 4; k++) { g.beginPath(); g.moveTo(-r * 1.2, k * r * .32 - r * 1.2); g.lineTo(r * 1.2, k * r * .32 + r * 1.2); g.stroke(); g.beginPath(); g.moveTo(r * 1.2, k * r * .32 - r * 1.2); g.lineTo(-r * 1.2, k * r * .32 + r * 1.2); g.stroke(); }
   } else if (lv === 10) {
-    g.fillStyle = 'rgba(30,110,50,.5)';
+    g.fillStyle = 'rgba(30,110,50,.2)';
     for (let k = -3; k <= 3; k++) { const x = k * r * .3; g.beginPath(); g.moveTo(x * .55 - r * .09, -r); g.quadraticCurveTo(x * 1.35 - r * .12, 0, x * .55 - r * .09, r); g.lineTo(x * .55 + r * .09, r); g.quadraticCurveTo(x * 1.35 + r * .12, 0, x * .55 + r * .09, -r); g.closePath(); g.fill(); }
   }
   g.restore();
