@@ -79,7 +79,7 @@ canvas#cv{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);touc
 <div id="app">
   <section id="menu" class="screen on">
     <h1>💎 보석팡팡</h1>
-    <div class="sub" id="menuSub">같은 보석 3개를 맞춰 목표를 달성하세요 · v9</div>
+    <div class="sub" id="menuSub">같은 보석 3개를 맞춰 목표를 달성하세요 · v10</div>
     <div class="row">
       <button class="btn" id="btnContinue">이어하기</button>
       <button class="btn alt" id="btnSoundM">🔊</button>
@@ -279,7 +279,7 @@ function areaOf(t, r, c, set) {
   switch (t.sp) {
     case 'H': for (let x = 0; x < N; x++) add(r, x); fx.push({ k: 'row', r, c, t: 0 }); break;
     case 'V': for (let y = 0; y < N; y++) add(y, c); fx.push({ k: 'col', r, c, t: 0 }); break;
-    case 'B': for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) add(r + dr, c + dc); fx.push({ k: 'ring', r, c, t: 0, rad: 1.6 }); break;
+    case 'B': for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) add(r + dr, c + dc); fx.push({ k: 'ring', r, c, t: 0, rad: 2.6 }); break;   // 폭탄 5×5
     case 'P': {
       add(r, c); add(r - 1, c); add(r + 1, c); add(r, c - 1); add(r, c + 1);
       const tk = t.ptarget !== undefined ? t.ptarget : pickTarget(set);
@@ -446,12 +446,12 @@ function comboSet(a, b, ra, ca, rb, cb) {
     return { set, long: true };
   }
   if (A === 'B' && B === 'B') {
-    for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) if (inb(ra + dr, ca + dc)) set.add(keyOf(ra + dr, ca + dc));
-    fx.push({ k: 'ring', r: ra, c: ca, t: 0, rad: 2.8 });
+    for (let dr = -3; dr <= 3; dr++) for (let dc = -3; dc <= 3; dc++) if (inb(ra + dr, ca + dc)) set.add(keyOf(ra + dr, ca + dc));
+    fx.push({ k: 'ring', r: ra, c: ca, t: 0, rad: 3.8 });
     a.sp = null; b.sp = null;
     return { set, long: true };
   }
-  for (let d = -1; d <= 1; d++) for (let i = 0; i < N; i++) { if (inb(ra + d, i)) set.add(keyOf(ra + d, i)); if (inb(i, ca + d)) set.add(keyOf(i, ca + d)); }
+  for (let d = -2; d <= 2; d++) for (let i = 0; i < N; i++) { if (inb(ra + d, i)) set.add(keyOf(ra + d, i)); if (inb(i, ca + d)) set.add(keyOf(i, ca + d)); }
   fx.push({ k: 'ring', r: ra, c: ca, t: 0, rad: 4 });
   a.sp = null; b.sp = null;
   return { set, long: true };
