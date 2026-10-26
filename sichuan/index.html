@@ -133,6 +133,7 @@ const KINDS = [
   ['🍑', '#ffdcc9'], ['🍒', '#ffc4cc'], ['🍉', '#d9f5d0'], ['🍌', '#fff0a8'], ['🍍', '#fdeeb0'],
   ['🥝', '#d6f2c0'], ['🍐', '#e6f5b8'], ['🍪', '#f0dcc0'], ['🍩', '#ffd9ec'],
   ['🍰', '#ffe6ef'], ['🍦', '#dcefff'], ['🍭', '#ffd2f0'], ['🍫', '#e6d2c4'],
+  ['🍬', '#ffd6e8'], ['🧁', '#ffe3ee'], ['🥐', '#f6e2bf'], ['🍿', '#fff4c9'], ['🥥', '#e8eef2'], ['🍅', '#ffc9c0'],
 ];
 const DIFFS = {
   easy:   { name: '쉬움',   emoji: '🍓', kinds: 10 },
@@ -142,9 +143,9 @@ const DIFFS = {
 /* 난이도별 단계 설정: 판 크기, 층 수, 그림 종류 수(앞 단계는 적고 뒤로 갈수록 많아짐), 별 기준(짝당 초) */
 const STAGE_COUNT = 20;
 const STAGE_CFG = {
-  easy:   { dims: i => (i < 7 ? [5, 5] : [5, 6]), min: 26, kinds: [6, 10],  layers: i => (i < 10 ? 2 : 3), perPair: 5 },
-  normal: { dims: i => (i < 7 ? [5, 6] : i < 14 ? [6, 6] : [6, 7]), min: 40, kinds: [10, 14], layers: i => (i < 7 ? 2 : i < 14 ? 3 : 4), perPair: 4 },
-  hard:   { dims: i => (i < 7 ? [6, 6] : i < 14 ? [7, 6] : [7, 7]), min: 60, kinds: [14, 18], layers: i => (i < 7 ? 3 : 4), perPair: 3.5 },
+  easy:   { dims: i => (i < 7 ? [5, 6] : i < 14 ? [6, 6] : [6, 7]), kinds: [8, 14],  layers: i => (i < 5 ? 2 : i < 12 ? 3 : 4), perPair: 4 },
+  normal: { dims: i => (i < 5 ? [6, 6] : i < 12 ? [6, 7] : [7, 7]), kinds: [12, 18], layers: i => (i < 4 ? 3 : 4), perPair: 3.3 },
+  hard:   { dims: i => (i < 4 ? [6, 7] : i < 12 ? [7, 7] : [7, 8]), kinds: [16, 22], layers: i => (i < 8 ? 4 : 5), perPair: 2.8 },
 };
 /* 바닥 층의 모양 (c,r = 칸 위치, W,H = 판 크기) */
 const cxy = (c, r, W, H) => [c - (W - 1) / 2, r - (H - 1) / 2];
@@ -211,7 +212,7 @@ function buildSlots(key, stage) {
   if (!stageCache[key]) {
     const list = [], recent = [];
     for (let s = 1; s <= STAGE_COUNT; s++) {
-      const cfg = stageCfg(key, s), need = Math.max(24, Math.round(cfg.W * cfg.H * ({ easy: .85, normal: .95, hard: 1.1 })[key]));
+      const cfg = stageCfg(key, s), need = Math.max(({ easy: 30, normal: 40, hard: 56 })[key], Math.round(cfg.W * cfg.H * ({ easy: .95, normal: 1.05, hard: 1.05 })[key]));
       let pick = null, fallback = null;
       for (let k = 0; k < SHAPES.length && !pick; k++) {
         const idx = (cfg.shapeIdx + k) % SHAPES.length, out = buildShape(cfg, idx);
