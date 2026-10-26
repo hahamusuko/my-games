@@ -1,0 +1,14 @@
+{
+  "name": "수박 합치기",
+  "short_name": "수박합치기",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffe9a8",
+  "theme_color": "#ffe9a8",
+  "icons": [
+    {"src": "icon-180.png", "sizes": "180x180", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
