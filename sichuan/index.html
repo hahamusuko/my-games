@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="과일사천성">
+<meta name="theme-color" content="#ffd9c7">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>과일사천성</title>
+<style>
+:root{--ink:#5a3b2e;--sub:#a07a68;--card:rgba(255,255,255,.62);--pink:#ff7aa2;--peach:#ffb98a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;overscroll-behavior:none}
+body{position:fixed;inset:0;background:linear-gradient(#fff1f5,#ffe2d2 60%,#ffd3c2);overflow:hidden}
+#app{height:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;padding:calc(max(8px,env(safe-area-inset-top)) + clamp(6px,2vh,18px)) 12px calc(max(10px,env(safe-area-inset-bottom)) + clamp(6px,1.6vh,14px))}
+.screen{display:none;flex:1;min-height:0;flex-direction:column}
+.screen.on{display:flex}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+.btn{background:linear-gradient(#ff9bb8,#ff6f9a);color:#fff;font-weight:800;padding:13px 22px;border-radius:18px;font-size:17px;box-shadow:0 4px 0 #d94b79,0 8px 16px rgba(120,50,30,.18)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #d94b79}
+.btn.alt{background:linear-gradient(#ffd7a8,#ffb36b);color:#6b3a10;box-shadow:0 4px 0 #d98a3d,0 8px 16px rgba(120,50,30,.18)}
+.icon{width:clamp(46px,8.2vh,60px);height:clamp(46px,8.2vh,60px);border-radius:18px;background:var(--card);font-size:clamp(22px,4vh,29px);display:grid;place-items:center;box-shadow:0 3px 0 rgba(160,110,90,.25)}
+.icon:active{background:rgba(255,255,255,.95)}
+.icon:disabled{opacity:.35}
+
+/* 메뉴 */
+#menu{align-items:center}
+#menu h1{margin:clamp(6px,2vh,22px) 0 0;font-size:clamp(34px,6vh,44px);letter-spacing:1px;color:#ff5c8a;text-shadow:0 3px 0 #fff,0 6px 12px rgba(200,90,100,.25)}
+#menu .fruits{font-size:clamp(26px,4.6vh,36px);letter-spacing:4px;margin:2px 0 clamp(8px,2vh,18px)}
+.cards{width:100%;display:flex;flex-direction:column;gap:clamp(8px,1.6vh,14px)}
+.card{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:22px;padding:clamp(10px,1.8vh,16px) 16px;text-align:left;box-shadow:0 4px 0 rgba(160,110,90,.22)}
+.card:active{transform:translateY(2px)}
+.card .e{font-size:clamp(30px,5vh,40px)}
+.card b{display:block;font-size:clamp(18px,3vh,22px)}
+.card span{font-size:clamp(12px,1.9vh,14px);color:var(--sub)}
+.card .best{margin-left:auto;text-align:right;font-weight:800;color:#e0507c;font-size:clamp(13px,2.1vh,16px)}
+.opts{display:flex;gap:10px;margin-top:clamp(10px,2.4vh,20px);flex-wrap:wrap;justify-content:center}
+.chip{background:var(--card);border-radius:999px;padding:9px 16px;font-weight:700;font-size:15px;box-shadow:0 3px 0 rgba(160,110,90,.2)}
+.chip.on{background:#ffd0de;color:#c93a66}
+
+/* 게임 */
+#game.on{display:grid;grid-template-rows:auto minmax(0,1fr) auto;row-gap:clamp(6px,1.4vh,12px)}
+#top{display:flex;align-items:center;gap:10px}
+#top .t{flex:1;text-align:center;line-height:1.15}
+#top .t b{display:block;font-size:clamp(26px,4.8vh,36px);font-weight:900;color:#ff5c8a;text-shadow:0 2px 0 #fff}
+#top .t span{font-size:clamp(12px,2vh,15px);color:var(--sub);font-weight:700}
+#top .box{min-width:clamp(64px,12vh,84px);text-align:center;background:var(--card);border-radius:16px;padding:6px 10px;line-height:1.15;box-shadow:0 3px 0 rgba(160,110,90,.22)}
+#top .box small{display:block;font-size:11px;color:var(--sub);font-weight:700}
+#top .box b{font-size:clamp(18px,3.2vh,24px)}
+#stage{position:relative;min-height:0;overflow:hidden}
+canvas#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#toast{position:absolute;left:0;right:0;top:6%;text-align:center;font-weight:900;font-size:20px;color:#fff;pointer-events:none;opacity:0;transition:opacity .25s}
+#toast span{background:rgba(120,70,50,.78);padding:8px 16px;border-radius:999px}
+#toast.on{opacity:1}
+#bar{display:flex;gap:clamp(8px,2.2vw,14px);justify-content:center}
+
+/* 모달 */
+#modal{position:fixed;inset:0;background:rgba(90,50,40,.5);display:none;align-items:center;justify-content:center;z-index:9;padding:20px}
+#modal.on{display:flex}
+#modal .box{background:#fff8f2;border-radius:26px;padding:24px 22px 20px;width:100%;max-width:340px;text-align:center;box-shadow:0 20px 50px rgba(90,40,30,.4)}
+#modal h2{margin:0 0 6px;font-size:28px;color:#ff5c8a}
+#modal p{margin:6px 0 14px;color:var(--sub);font-size:16px;font-weight:700}
+#modal .big{font-size:54px;margin:4px 0}
+#modal .btns{display:flex;flex-direction:column;gap:10px}
+</style>
+</head>
+<body>
+<div id="app">
+  <section id="menu" class="screen on">
+    <h1>과일 사천성</h1>
+    <div class="fruits">🍓🍊🍇🍪🍩</div>
+    <div class="cards" id="cards"></div>
+    <div class="opts">
+      <button class="chip" id="optDim">막힌 패 어둡게</button>
+      <button class="chip" id="optSound">🔊 소리</button>
+    </div>
+  </section>
+
+  <section id="game" class="screen">
+    <div id="top">
+      <button class="icon" id="btnExit" aria-label="나가기">🚪</button>
+      <div class="t"><b id="diffName">쉬움</b><span id="pairs">남은 짝 0</span></div>
+      <div class="box"><small>시간</small><b id="timer">0:00</b></div>
+    </div>
+    <div id="stage"><canvas id="cv"></canvas><div id="toast"><span id="toastText"></span></div></div>
+    <div id="bar">
+      <button class="icon" id="btnHint" aria-label="힌트">💡</button>
+      <button class="icon" id="btnUndo" aria-label="되돌리기">↶</button>
+      <button class="icon" id="btnShuffle" aria-label="섞기">🔀</button>
+      <button class="icon" id="btnRetry" aria-label="새 게임">↻</button>
+      <button class="icon" id="btnSound" aria-label="소리">🔊</button>
+    </div>
+  </section>
+</div>
+<div id="modal"><div class="box" id="modalBox"></div></div>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const rndInt = n => Math.floor(Math.random() * n);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* ===== 패 그림: 과일과 간식 (이모지 + 파스텔 바탕) ===== */
+const KINDS = [
+  ['🍎', '#ffd3d3'], ['🍊', '#ffe0bd'], ['🍋', '#fff5b8'], ['🍇', '#e3d2ff'], ['🍓', '#ffcddb'],
+  ['🍑', '#ffdcc9'], ['🍒', '#ffc4cc'], ['🍉', '#d9f5d0'], ['🍌', '#fff0a8'], ['🍍', '#fdeeb0'],
+  ['🥝', '#d6f2c0'], ['🍐', '#e6f5b8'], ['🍪', '#f0dcc0'], ['🍩', '#ffd9ec'],
+  ['🍰', '#ffe6ef'], ['🍦', '#dcefff'], ['🍭', '#ffd2f0'], ['🍫', '#e6d2c4'],
+];
+const DIFFS = {
+  easy:   { name: '쉬움',   emoji: '🍓', kinds: 10 },
+  normal: { name: '보통',   emoji: '🍇', kinds: 14 },
+  hard:   { name: '어려움', emoji: '🍩', kinds: 18 },
+};
+/* 층별 배치: (z, 시작 x, 시작 y, 가로 개수, 세로 개수) — 단위는 패 크기 */
+const LAYOUTS = {
+  easy:   [[0, 0, 0, 5, 6], [1, 1, 1, 3, 4], [2, 1.5, 2, 2, 2]],
+  normal: [[0, 0, 0, 6, 7], [1, 1, 1, 4, 5], [2, 2, 2, 2, 3]],
+  hard:   [[0, 0, 0, 6, 7], [1, .5, .5, 5, 6], [2, 1, 1.5, 4, 4], [3, 2, 2.5, 2, 2]],
+};
+const TILE_RATIO = 1.24;   // 패 세로/가로
+
+/* ===== 저장 ===== */
+const SAVE_KEY = 'sichuan.v1';
+let store = { best: {}, sound: true, dim: true };
+try { Object.assign(store, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) {}
+const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(store)); } catch (e) {} };
+
+/* ===== 소리 ===== */
+let ac = null;
+function beep(f, d = .08, type = 'sine', v = .07) {
+  if (!store.sound) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(v, ac.currentTime); g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + d);
+    o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + d);
+  } catch (e) {}
+}
+const sfx = {
+  pick: () => beep(620, .05, 'triangle'),
+  match: n => { beep(700 + Math.min(n, 10) * 25, .1); setTimeout(() => beep(1000 + Math.min(n, 10) * 25, .12), 70); },
+  bad: () => beep(170, .1, 'square', .04),
+  win: () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => beep(f, .22, 'triangle', .09), i * 110)),
+};
+
+/* ===== 판 데이터 ===== */
+let diffKey = 'easy', slots = [], kind = [], alive = [], cover = [], leftN = [], rightN = [];
+let sel = -1, history = [], hintPair = null, hintUntil = 0, comboCount = 0;
+let anims = [], particles = [], shakes = new Map();
+let startAt = 0, elapsed = 0, running = false, over = false, shuffling = false;
+
+function buildSlots(key) {
+  const out = [];
+  for (const [z, x0, y0, cols, rows] of LAYOUTS[key]) for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) out.push({ x: (x0 + c) * 2, y: (y0 + r) * 2, z });
+  return out;
+}
+function buildNeighbors() {
+  const n = slots.length; cover = []; leftN = []; rightN = [];
+  for (let i = 0; i < n; i++) {
+    const a = slots[i], cv = [], l = [], r = [];
+    for (let j = 0; j < n; j++) {
+      if (i === j) continue;
+      const b = slots[j], dx = b.x - a.x, dy = b.y - a.y;
+      if (b.z > a.z && Math.abs(dx) < 2 && Math.abs(dy) < 2) cv.push(j);
+      else if (b.z === a.z && Math.abs(dy) < 2) { if (dx === -2) l.push(j); else if (dx === 2) r.push(j); }
+    }
+    cover.push(cv); leftN.push(l); rightN.push(r);
+  }
+}
+/* 위가 비어 있고 왼쪽이나 오른쪽이 비어 있으면 고를 수 있는 패 */
+function isFree(i, al = alive) {
+  if (!al[i]) return false;
+  if (cover[i].some(j => al[j])) return false;
+  return !leftN[i].some(j => al[j]) || !rightN[i].some(j => al[j]);
+}
+const freeList = (al = alive) => { const f = []; for (let i = 0; i < slots.length; i++) if (isFree(i, al)) f.push(i); return f; };
+
+/* 거꾸로 짝을 채워서 반드시 끝까지 풀 수 있는 판을 만든다 */
+function dealInto(idxs, pairKinds) {
+  for (let attempt = 0; attempt < 400; attempt++) {
+    const al = new Array(slots.length).fill(false); idxs.forEach(i => al[i] = true);
+    const pool = pairKinds.slice().sort(() => Math.random() - .5), res = {};
+    let left = idxs.length, ok = true;
+    while (left > 0) {
+      const f = freeList(al);
+      if (f.length < 2) { ok = false; break; }
+      const a = f.splice(rndInt(f.length), 1)[0], b = f.splice(rndInt(f.length), 1)[0], k = pool.pop();
+      res[a] = k; res[b] = k; al[a] = al[b] = false; left -= 2;
+    }
+    if (ok) return res;
+  }
+  return null;
+}
+function newGame(key) {
+  diffKey = key; slots = buildSlots(key); buildNeighbors();
+  const K = DIFFS[key].kinds, pairs = slots.length / 2, pk = [];
+  for (let i = 0; i < pairs; i++) pk.push(i % K);
+  const all = slots.map((_, i) => i), res = dealInto(all, pk);
+  kind = slots.map((_, i) => res[i]); alive = slots.map(() => true);
+  sel = -1; history = []; hintPair = null; anims = []; particles = []; shakes = new Map(); comboCount = 0;
+  elapsed = 0; startAt = Date.now(); running = true; over = false; shuffling = false;
+  $('#diffName').textContent = DIFFS[key].name; updateHud(); layout();
+}
+function reshuffle() {
+  const idxs = [], kinds = [];
+  alive.forEach((a, i) => { if (a) { idxs.push(i); kinds.push(kind[i]); } });
+  // 남은 패의 그림 개수를 그대로 쓰기 위해 짝 단위로 다시 센다
+  const cnt = {}; kinds.forEach(k => cnt[k] = (cnt[k] || 0) + 1);
+  const pairKinds = []; Object.entries(cnt).forEach(([k, c]) => { for (let i = 0; i < Math.floor(c / 2); i++) pairKinds.push(+k); });
+  const res = dealInto(idxs, pairKinds);
+  if (res) idxs.forEach(i => kind[i] = res[i]);
+  sel = -1; hintPair = null;
+}
+const remainingTiles = () => alive.filter(Boolean).length;
+function findPairs() {
+  const f = freeList(), out = [];
+  for (let a = 0; a < f.length; a++) for (let b = a + 1; b < f.length; b++) if (kind[f[a]] === kind[f[b]]) out.push([f[a], f[b]]);
+  return out;
+}
+
+/* ===== 조작 ===== */
+function tapTile(i) {
+  if (over || shuffling) return;
+  hintPair = null;
+  if (!isFree(i)) { shakes.set(i, 1); sfx.bad(); toast('다른 패에 막혀 있어요'); return; }
+  if (sel === -1) { sel = i; sfx.pick(); return; }
+  if (sel === i) { sel = -1; return; }
+  if (kind[sel] === kind[i]) { removePair(sel, i); sel = -1; }
+  else { sel = i; sfx.pick(); }
+}
+function removePair(a, b) {
+  alive[a] = alive[b] = false; history.push([a, b]);
+  comboCount++; sfx.match(comboCount);
+  [a, b].forEach(i => { anims.push({ i, t: 0 }); burst(i); });
+  updateHud();
+  if (remainingTiles() === 0) { win(); return; }
+  if (!findPairs().length) autoShuffle();
+}
+async function autoShuffle() {
+  shuffling = true; toast('움직일 패가 없어서 섞어요 🔀', 1400); await sleep(900);
+  reshuffle(); shuffling = false; updateHud();
+}
+function undo() {
+  if (over || shuffling || !history.length) return;
+  const [a, b] = history.pop(); alive[a] = alive[b] = true; anims = anims.filter(x => x.i !== a && x.i !== b);
+  sel = -1; hintPair = null; updateHud();
+}
+function hint() {
+  if (over || shuffling) return;
+  const p = findPairs(); if (!p.length) { autoShuffle(); return; }
+  hintPair = p[rndInt(p.length)]; hintUntil = Date.now() + 4000; sel = -1;
+}
+function win() {
+  over = true; running = false; elapsed = Date.now() - startAt; sfx.win();
+  const prev = store.best[diffKey], isBest = !prev || elapsed < prev;
+  if (isBest) { store.best[diffKey] = elapsed; save(); }
+  setTimeout(() => openModal(`<div class="big">🎉</div><h2>모두 맞췄어요!</h2><p>걸린 시간 ${fmt(elapsed)}${isBest ? '<br>✨ 새 기록이에요!' : '<br>최고 기록 ' + fmt(store.best[diffKey])}</p>
+    <div class="btns"><button class="btn" data-a="again">한 번 더</button><button class="btn alt" data-a="menu">메뉴</button></div>`), 700);
+}
+const fmt = ms => { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+function updateHud() {
+  $('#pairs').textContent = '남은 짝 ' + Math.floor(remainingTiles() / 2);
+  $('#btnUndo').disabled = !history.length;
+}
+let toastTimer = 0;
+function toast(t, ms = 1100) { $('#toastText').textContent = t; $('#toast').classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('on'), ms); }
+function openModal(html) { $('#modalBox').innerHTML = html; $('#modal').classList.add('on'); }
+$('#modalBox').addEventListener('click', e => {
+  const a = e.target.closest('[data-a]'); if (!a) return; $('#modal').classList.remove('on');
+  if (a.dataset.a === 'again') newGame(diffKey); else goMenu();
+});
+
+/* ===== 화면 ===== */
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); }
+function goMenu() { running = false; renderMenu(); showScreen('menu'); }
+function renderMenu() {
+  const box = $('#cards'); box.innerHTML = '';
+  for (const [k, d] of Object.entries(DIFFS)) {
+    const n = LAYOUTS[k].reduce((s, l) => s + l[3] * l[4], 0);
+    const b = document.createElement('button'); b.className = 'card';
+    b.innerHTML = `<div class="e">${d.emoji}</div><div><b>${d.name}</b><span>패 ${n}개 · 그림 ${d.kinds}종</span></div><div class="best">${store.best[k] ? '🏆 ' + fmt(store.best[k]) : ''}</div>`;
+    b.onclick = () => { showScreen('game'); newGame(k); };
+    box.appendChild(b);
+  }
+  $('#optDim').classList.toggle('on', store.dim);
+  $('#optSound').classList.toggle('on', store.sound); $('#optSound').textContent = (store.sound ? '🔊' : '🔇') + ' 소리';
+  $('#btnSound').textContent = store.sound ? '🔊' : '🔇';
+}
+$('#optDim').onclick = () => { store.dim = !store.dim; save(); renderMenu(); };
+const toggleSound = () => { store.sound = !store.sound; save(); renderMenu(); };
+$('#optSound').onclick = $('#btnSound').onclick = toggleSound;
+$('#btnExit').onclick = goMenu;
+$('#btnHint').onclick = hint;
+$('#btnUndo').onclick = undo;
+$('#btnShuffle').onclick = () => { if (!over && !shuffling) { reshuffle(); toast('섞었어요 🔀'); } };
+$('#btnRetry').onclick = () => newGame(diffKey);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && running) { elapsed += Date.now() - startAt; running = 'paused'; }
+  else if (!document.hidden && running === 'paused') { startAt = Date.now(); running = true; }
+});
+
+/* ===== 그리기 ===== */
+const cv = $('#cv'), cx = cv.getContext('2d');
+let W = 0, H = 0, dpr = 1, U = 20, OX = 0, OY = 0, DZ = 5, TH = 5;
+function layout() {
+  const st = $('#stage'); W = st.clientWidth; H = st.clientHeight;
+  if (W < 50 || H < 50 || !slots.length) return;
+  dpr = window.devicePixelRatio || 1; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  let maxX = 0, maxY = 0, maxZ = 0; slots.forEach(s => { maxX = Math.max(maxX, s.x + 2); maxY = Math.max(maxY, s.y + 2); maxZ = Math.max(maxZ, s.z); });
+  const extra = maxZ * .3 + .35;
+  U = Math.min((W - 10) / (maxX + extra), (H - 10) / ((maxY + extra) * TILE_RATIO));
+  DZ = U * .3; TH = U * .35;
+  OX = (W - (maxX * U + (maxZ * .3 + .35) * U)) / 2 + maxZ * DZ;
+  OY = (H - ((maxY * TILE_RATIO) * U + (maxZ * .3 + .35) * U)) / 2 + maxZ * DZ;
+}
+if (window.ResizeObserver) new ResizeObserver(() => layout()).observe($('#stage'));
+window.addEventListener('resize', () => setTimeout(layout, 60));
+window.addEventListener('orientationchange', () => setTimeout(layout, 200));
+
+const tilePos = i => { const s = slots[i]; return { x: OX + s.x * U - s.z * DZ, y: OY + s.y * U * TILE_RATIO - s.z * DZ }; };
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+
+function drawTile(g, i, o) {
+  const { x, y } = tilePos(i), w = U * 2, h = U * 2 * TILE_RATIO, k = kind[i];
+  const sc = o.scale || 1, a = o.alpha === undefined ? 1 : o.alpha;
+  g.save(); g.globalAlpha = a;
+  g.translate(x + w / 2 + (o.dx || 0), y + h / 2 + (o.dy || 0)); g.scale(sc, sc); g.translate(-w / 2, -h / 2);
+  const rad = w * .2;
+  g.fillStyle = 'rgba(120,70,50,.22)'; rr(g, TH * .5, TH * 1.1, w, h, rad); g.fill();           // 그림자
+  rr(g, TH * .8, TH * .8, w, h, rad); g.fillStyle = '#e6c493'; g.fill();                       // 옆면(두께)
+  g.lineWidth = 1.2; g.strokeStyle = '#c9a26a'; g.stroke();
+  rr(g, 0, 0, w, h, rad);
+  const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#fffefa'); gr.addColorStop(1, '#fff1d4');
+  g.fillStyle = gr; g.fill(); g.lineWidth = 1.5; g.strokeStyle = o.sel ? '#ff5c8a' : '#e7cf9f'; g.stroke();
+  const [em, tint] = KINDS[k];
+  rr(g, w * .1, h * .08, w * .8, h * .84, rad * .7); g.fillStyle = tint; g.fill();
+  g.font = `${Math.floor(w * .6)}px ${EMOJI_FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(em, w / 2, h * .53);
+  if (o.dim) { rr(g, 0, 0, w, h, rad); g.fillStyle = 'rgba(95,70,50,.38)'; g.fill(); }
+  if (o.sel) { rr(g, -1, -1, w + 2, h + 2, rad); g.lineWidth = 3.5; g.strokeStyle = '#ff5c8a'; g.stroke(); }
+  if (o.glow) { rr(g, -2, -2, w + 4, h + 4, rad); g.lineWidth = 4; g.strokeStyle = '#ffc400'; g.shadowColor = '#ffd84d'; g.shadowBlur = 14; g.stroke(); }
+  g.restore();
+}
+function burst(i) {
+  const { x, y } = tilePos(i), cxp = x + U, cyp = y + U * TILE_RATIO;
+  const cols = ['#ff7aa2', '#ffc34d', '#7ed6a0', '#7ab8ff', '#c79bff'];
+  for (let n = 0; n < 9; n++) particles.push({ x: cxp, y: cyp, vx: (Math.random() - .5) * 260, vy: (Math.random() - .8) * 260, life: .6, col: cols[rndInt(cols.length)], s: 3 + Math.random() * 3 });
+}
+function draw(time) {
+  const g = cx; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  if (!slots.length) return;
+  const order = slots.map((_, i) => i).sort((a, b) => slots[a].z - slots[b].z || slots[a].y - slots[b].y || slots[a].x - slots[b].x);
+  const free = store.dim ? new Set(freeList()) : null;
+  const hintOn = hintPair && Date.now() < hintUntil;
+  for (const i of order) {
+    const an = anims.find(a => a.i === i);
+    if (!alive[i] && !an) continue;
+    if (an) { const p = Math.min(1, an.t / .35); drawTile(g, i, { alpha: 1 - p, scale: 1 + p * .25, dy: -p * U * .6 }); continue; }
+    const sh = shakes.get(i) || 0;
+    drawTile(g, i, {
+      sel: sel === i, dim: free && !free.has(i), dx: sh ? Math.sin(sh * 30) * sh * 5 : 0,
+      glow: hintOn && hintPair.includes(i) && Math.sin(time * 9) > -.3,
+    });
+  }
+  for (const p of particles) { g.save(); g.globalAlpha = Math.max(0, p.life / .6); g.fillStyle = p.col; g.beginPath(); g.arc(p.x, p.y, p.s, 0, Math.PI * 2); g.fill(); g.restore(); }
+}
+let lastT = Date.now();
+setInterval(() => {
+  const now = Date.now(), dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
+  anims.forEach(a => a.t += dt); anims = anims.filter(a => a.t < .35);
+  particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 600 * dt; p.life -= dt; }); particles = particles.filter(p => p.life > 0);
+  for (const [i, v] of shakes) { const nv = v - dt * 3.2; if (nv <= 0) shakes.delete(i); else shakes.set(i, nv); }
+  if (running === true) $('#timer').textContent = fmt(elapsed + now - startAt);
+  else if (over) $('#timer').textContent = fmt(elapsed);
+}, 50);
+(function loop(ts) { draw((ts || 0) / 1000); requestAnimationFrame(loop); })();
+
+/* ===== 입력 ===== */
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault(); if (!slots.length || over) return;
+  const b = cv.getBoundingClientRect(), px = e.clientX - b.left, py = e.clientY - b.top;
+  const order = slots.map((_, i) => i).sort((a, c) => slots[c].z - slots[a].z || slots[c].y - slots[a].y || slots[c].x - slots[a].x);
+  for (const i of order) {
+    if (!alive[i]) continue;
+    const { x, y } = tilePos(i);
+    if (px >= x && px <= x + U * 2 && py >= y && py <= y + U * 2 * TILE_RATIO) { tapTile(i); return; }
+  }
+  sel = -1;
+});
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('dblclick', e => e.preventDefault());
+
+/* ===== 시작 ===== */
+renderMenu();
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>

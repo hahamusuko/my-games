@@ -1,0 +1,14 @@
+{
+  "name": "과일 사천성",
+  "short_name": "과일사천성",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffe2d2",
+  "theme_color": "#ffd9c7",
+  "icons": [
+    {"src": "icon-180.png", "sizes": "180x180", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
