@@ -79,7 +79,7 @@ canvas#cv{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);touc
 <div id="app">
   <section id="menu" class="screen on">
     <h1>💎 보석팡팡</h1>
-    <div class="sub" id="menuSub">같은 보석 3개를 맞춰 목표를 달성하세요 · v8</div>
+    <div class="sub" id="menuSub">같은 보석 3개를 맞춰 목표를 달성하세요 · v9</div>
     <div class="row">
       <button class="btn" id="btnContinue">이어하기</button>
       <button class="btn alt" id="btnSoundM">🔊</button>
@@ -357,17 +357,28 @@ async function doClear(set, o = {}) {
 
 /* ===== 낙하·채우기 ===== */
 function sync() { /* 목표 위치는 grid 인덱스 자체. 별도 작업 없음 */ }
+// 상자는 제자리에 고정. 보석만 아래로 떨어지고, 상자 바로 밑 빈칸은 옆 위쪽 보석이 비스듬히 흘러들어 채운다.
 function fall() {
-  for (let c = 0; c < N; c++) {
-    let w = N - 1;
-    for (let r = N - 1; r >= 0; r--) {
+  for (let guard = 0; guard < 400; guard++) {
+    let moved = false;
+    for (let r = N - 2; r >= 0; r--) for (let c = 0; c < N; c++) {          // 1) 한 칸씩 아래로
       const t = grid[r][c];
-      if (t) { if (r !== w) { grid[w][c] = t; grid[r][c] = null; t.g = true; } w--; }
+      if (t && t.k === 'g' && !grid[r + 1][c]) { grid[r + 1][c] = t; grid[r][c] = null; t.g = true; moved = true; }
     }
-    for (let r = w; r >= 0; r--) {
-      const t = newGem(r, c, rndInt(G.nc), -1 - (w - r));
-      t.g = true; grid[r][c] = t;
+    for (let c = 0; c < N; c++) if (!grid[0][c]) {                           // 2) 맨 윗칸이 비면 새 보석
+      const below = grid[1][c], t = newGem(0, c, rndInt(G.nc), Math.min(-1, (below ? below.y : 0) - 1));
+      t.g = true; grid[0][c] = t; moved = true;
     }
+    for (let r = 1; r < N; r++) for (let c = 0; c < N; c++) {                // 3) 상자 밑 빈칸: 옆 위쪽에서 비스듬히
+      const above = grid[r - 1][c];
+      if (grid[r][c] || !above || above.k !== 'b') continue;
+      const sides = Math.random() < .5 ? [c - 1, c + 1] : [c + 1, c - 1];
+      for (const cc of sides) {
+        const s = cc >= 0 && cc < N ? grid[r - 1][cc] : null;
+        if (s && s.k === 'g' && !s.dead) { grid[r][c] = s; grid[r - 1][cc] = null; s.g = false; moved = true; break; }
+      }
+    }
+    if (!moved) break;
   }
 }
 function allSettled() {
@@ -553,7 +564,7 @@ async function startLevel(n) {
     const cells = []; for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) cells.push([r, c]);
     for (let i = cells.length - 1; i > 0; i--) { const j = rndInt(i + 1);[cells[i], cells[j]] = [cells[j], cells[i]]; }
     let ci = 0;
-    for (let i = 0; i < spec.boxes; i++) { const [r, c] = cells[ci++]; grid[r][c] = newBox(r, c, i < spec.boxHp2 ? 2 : 1, r - N - 2 - Math.random() * 2); grid[r][c].g = true; }
+    for (let i = 0; i < spec.boxes; i++) { const [r, c] = cells[ci++]; grid[r][c] = newBox(r, c, i < spec.boxHp2 ? 2 : 1); }
     for (let i = 0; i < spec.ice; i++) { const [r, c] = cells[ci++ % cells.length]; iceMap[r][c] = true; }
     ok = findMove() !== null && !findGroups().length;
   }
